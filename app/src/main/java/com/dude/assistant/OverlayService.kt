@@ -12,8 +12,9 @@ import android.os.IBinder
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
-import android.view.animation.AnimationUtils
-import android.widget.ImageView
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
+import android.widget.EditText
 import android.widget.TextView
 import androidx.core.app.NotificationCompat
 
@@ -22,27 +23,23 @@ class OverlayService : Service() {
     private lateinit var windowManager: WindowManager
     private lateinit var overlayView: View
     private lateinit var tts: TTSManager
-    private lateinit var voiceManager: VoiceManager
     private lateinit var encryptionManager: EncryptionManager
     private lateinit var actionExecutor: ActionExecutor
 
-    // Views
-    private lateinit var orbImage: ImageView
     private lateinit var tvStatus: TextView
-    private lateinit var tvHeard: TextView
     private lateinit var tvResponse: TextView
+    private lateinit var etCommand: EditText
 
     companion object {
-        const val CHANNEL_ID = "dude_assistant_channel"
+        const val CHANNEL_ID = "dude_channel"
         const val NOTIF_ID = 1001
 
         fun start(context: Context) {
             val intent = Intent(context, OverlayService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
                 context.startForegroundService(intent)
-            } else {
+            else
                 context.startService(intent)
-            }
         }
 
         fun stop(context: Context) {
@@ -59,7 +56,6 @@ class OverlayService : Service() {
 
         encryptionManager = EncryptionManager(this)
         tts = TTSManager(this)
-
         actionExecutor = ActionExecutor(
             context = this,
             encryptionManager = encryptionManager,
@@ -68,110 +64,139 @@ class OverlayService : Service() {
         )
 
         setupOverlay()
-
-        voiceManager = VoiceManager(
-            context = this,
-            onResult = { text -> handleSpeechResult(text) },
-            onError = { msg -> updateStatus(msg) },
-            onListening = { setOrbState("listening") }
-        )
-
-        // Start listening immediately
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            tts.speak("Ji haan! Bolo...")
-            voiceManager.startListening()
-        }, 600)
+        tts.speak("Dude ready hai. Command dein.")
     }
 
     private fun setupOverlay() {
         val inflater = LayoutInflater.from(this)
         overlayView = inflater.inflate(R.layout.overlay_view, null)
 
-        orbImage = overlayView.findViewById(R.id.orb_image)
         tvStatus = overlayView.findViewById(R.id.tv_status)
-        tvHeard = overlayView.findViewById(R.id.tv_heard)
         tvResponse = overlayView.findViewById(R.id.tv_response)
+        etCommand = overlayView.findViewById(R.id.et_command)
+
+        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        else
+            WindowManager.LayoutParams.TYPE_PHONE
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            else
-                WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            type,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         windowManager.addView(overlayView, params)
 
-        // Start pulse animation
-        val pulse = AnimationUtils.loadAnimation(this, R.anim.pulse)
-        orbImage.startAnimation(pulse)
+        setupButtons()
+        setupTextInput()
+    }
 
-        // Tap orb to restart listening
-        overlayView.findViewById<View>(R.id.orb_container).setOnClickListener {
-            voiceManager.stopListening()
+    private fun setupButtons() {
+        // Close
+        overlayView.findViewById<TextView>(R.id.btn_close).setOnClickListener {
+            tts.speak("Bye Dude!")
             android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                voiceManager.startListening()
-            }, 300)
+                stopSelf()
+            }, 1500)
         }
 
-        // Tap overlay background to dismiss
-        overlayView.setOnLongClickListener {
-            stopSelf()
-            true
+        // WhatsApp
+        overlayView.findViewById<TextView>(R.id.btn_whatsapp).setOnClickListener {
+            showPrompt("mama ko WhatsApp message karo ke kya hal hai")
+        }
+
+        // YouTube
+        overlayView.findViewById<TextView>(R.id.btn_youtube).setOnClickListener {
+            executeCommand("youtube kholo")
+        }
+
+        // Camera
+        overlayView.findViewById<TextView>(R.id.btn_camera).setOnClickListener {
+            executeCommand("camera kholo")
+        }
+
+        // Call
+        overlayView.findViewById<TextView>(R.id.btn_call).setOnClickListener {
+            showPrompt("mama ko call karo")
+        }
+
+        // Screenshot
+        overlayView.findViewById<TextView>(R.id.btn_screenshot).setOnClickListener {
+            executeCommand("screenshot lo")
+        }
+
+        // Back
+        overlayView.findViewById<TextView>(R.id.btn_back).setOnClickListener {
+            executeCommand("wapas jao")
+        }
+
+        // Volume Up
+        overlayView.findViewById<TextView>(R.id.btn_vol_up).setOnClickListener {
+            executeCommand("volume badhao")
+        }
+
+        // Volume Down
+        overlayView.findViewById<TextView>(R.id.btn_vol_down).setOnClickListener {
+            executeCommand("volume kam karo")
+        }
+
+        // Torch
+        overlayView.findViewById<TextView>(R.id.btn_torch).setOnClickListener {
+            executeCommand("torch on karo")
+        }
+
+        // Send button
+        overlayView.findViewById<TextView>(R.id.btn_send).setOnClickListener {
+            runCommand()
         }
     }
 
-    private fun handleSpeechResult(text: String) {
-        tvHeard.text = text
-        tvHeard.visibility = View.VISIBLE
+    private fun setupTextInput() {
+        // Enter key se bhi run ho
+        etCommand.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEND ||
+                actionId == EditorInfo.IME_ACTION_DONE) {
+                runCommand()
+                true
+            } else false
+        }
+    }
 
-        setOrbState("thinking")
-        updateStatus("Samajh raha hun...")
+    private fun showPrompt(text: String) {
+        etCommand.setText(text)
+        etCommand.setSelection(text.length)
+        etCommand.requestFocus()
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(etCommand, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun runCommand() {
+        val text = etCommand.text.toString().trim()
+        if (text.isEmpty()) return
+
+        // Keyboard band karo
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(etCommand.windowToken, 0)
+
+        etCommand.text.clear()
+        executeCommand(text)
+    }
+
+    private fun executeCommand(text: String) {
+        updateStatus("> $text")
+        updateResponse("> processing...")
 
         val cmd = CommandParser.parse(text, encryptionManager)
-        showResponse("Kaam kar raha hun...")
-
         actionExecutor.execute(cmd)
 
-        // After action, if not farewell, listen again
-        if (cmd.action != CommandParser.ActionType.FAREWELL) {
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                setOrbState("listening")
-                updateStatus("Sun raha hoon...")
-                voiceManager.startListening()
-            }, 4000)
-        }
-    }
-
-    private fun setOrbState(state: String) {
-        orbImage.clearAnimation()
-        when (state) {
-            "listening" -> {
-                orbImage.setImageResource(R.drawable.orb_listening)
-                tvStatus.text = "Sun raha hoon..."
-                tvStatus.setTextColor(resources.getColor(R.color.accent, null))
-            }
-            "thinking" -> {
-                orbImage.setImageResource(R.drawable.orb_idle)
-                tvStatus.text = "Soch raha hun..."
-                tvStatus.setTextColor(resources.getColor(R.color.accent_pink, null))
-            }
-            "speaking" -> {
-                orbImage.setImageResource(R.drawable.orb_idle)
-                tvStatus.text = "Bol raha hun..."
-                tvStatus.setTextColor(resources.getColor(R.color.success, null))
-            }
-            else -> {
-                orbImage.setImageResource(R.drawable.orb_idle)
-            }
-        }
-        val pulse = AnimationUtils.loadAnimation(this, R.anim.pulse)
-        orbImage.startAnimation(pulse)
+        // Response update
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            updateStatus("> READY... awaiting command_")
+        }, 3000)
     }
 
     private fun updateStatus(msg: String) {
@@ -180,31 +205,30 @@ class OverlayService : Service() {
         }
     }
 
-    private fun showResponse(msg: String) {
+    private fun updateResponse(msg: String) {
         android.os.Handler(android.os.Looper.getMainLooper()).post {
             tvResponse.text = msg
-            tvResponse.visibility = View.VISIBLE
         }
     }
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID, "Dude Assistant", NotificationManager.IMPORTANCE_LOW
+                CHANNEL_ID, "Dude Assistant",
+                NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Dude Assistant running"
                 setShowBadge(false)
             }
-            val nm = getSystemService(NotificationManager::class.java)
-            nm.createNotificationChannel(channel)
+            getSystemService(NotificationManager::class.java)
+                .createNotificationChannel(channel)
         }
     }
 
     private fun buildNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Dude Assistant")
-            .setContentText("Sun raha hun... \"Bye Dude\" bol kar band karein")
-            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+            .setContentText("Active hai — X dabao band karne ke liye")
+            .setSmallIcon(android.R.drawable.ic_menu_send)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .build()
@@ -212,10 +236,7 @@ class OverlayService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        voiceManager.destroy()
         tts.shutdown()
-        try {
-            windowManager.removeView(overlayView)
-        } catch (e: Exception) { /* ignore */ }
+        try { windowManager.removeView(overlayView) } catch (e: Exception) {}
     }
 }
