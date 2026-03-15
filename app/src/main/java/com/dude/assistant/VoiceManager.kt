@@ -22,60 +22,65 @@ class VoiceManager(
     }
 
     private fun createRecognizer() {
-        if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-            onError("Voice recognition available nahi hai is device par.")
-            return
-        }
-        recognizer = SpeechRecognizer.createSpeechRecognizer(context)
-        recognizer?.setRecognitionListener(object : RecognitionListener {
-            override fun onReadyForSpeech(params: Bundle?) {
-                isListening = true
-                onListening()
-                Log.d("VoiceManager", "Ready for speech")
-            }
-            override fun onBeginningOfSpeech() {}
-            override fun onRmsChanged(rmsdB: Float) {}
-            override fun onBufferReceived(buffer: ByteArray?) {}
-            override fun onEndOfSpeech() { isListening = false }
-            override fun onError(error: Int) {
-                isListening = false
-                val msg = when (error) {
-                    SpeechRecognizer.ERROR_NO_MATCH -> "Kuch suna nahi. Dobara bolein."
-                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Waqt khatam. Dobara bolein."
-                    SpeechRecognizer.ERROR_AUDIO -> "Microphone error."
-                    SpeechRecognizer.ERROR_NETWORK -> "Network error – offline mode."
-                    SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout."
-                    else -> "Error: $error"
+        try {
+            recognizer = SpeechRecognizer.createSpeechRecognizer(context)
+            recognizer?.setRecognitionListener(object : RecognitionListener {
+                override fun onReadyForSpeech(params: Bundle?) {
+                    isListening = true
+                    onListening()
                 }
-                onError(msg)
-            }
-            override fun onResults(results: Bundle?) {
-                isListening = false
-                val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                val text = matches?.firstOrNull() ?: ""
-                if (text.isNotEmpty()) onResult(text)
-            }
-            override fun onPartialResults(partialResults: Bundle?) {}
-            override fun onEvent(eventType: Int, params: Bundle?) {}
-        })
+                override fun onBeginningOfSpeech() {}
+                override fun onRmsChanged(rmsdB: Float) {}
+                override fun onBufferReceived(buffer: ByteArray?) {}
+                override fun onEndOfSpeech() { isListening = false }
+                override fun onError(error: Int) {
+                    isListening = false
+                    val msg = when (error) {
+                        SpeechRecognizer.ERROR_NO_MATCH -> "Suna nahi. Dobara bolein."
+                        SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "Waqt khatam. Dobara bolein."
+                        SpeechRecognizer.ERROR_AUDIO -> "Microphone error."
+                        SpeechRecognizer.ERROR_NETWORK,
+                        SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network error."
+                        SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Busy hai. Dobara try karein."
+                        else -> "Dobara bolein."
+                    }
+                    onError(msg)
+                    // Auto retry after error
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        if (!isListening) startListening()
+                    }, 1500)
+                }
+                override fun onResults(results: Bundle?) {
+                    isListening = false
+                    val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                    val text = matches?.firstOrNull() ?: ""
+                    if (text.isNotEmpty()) onResult(text)
+                }
+                override fun onPartialResults(partialResults: Bundle?) {}
+                override fun onEvent(eventType: Int, params: Bundle?) {}
+            })
+        } catch (e: Exception) {
+            Log.e("VoiceManager", "Error: ${e.message}")
+            onError("Microphone shuru nahi hua: ${e.message}")
+        }
     }
 
     fun startListening() {
         if (isListening) return
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            // Urdu first, fallback to Hindi and English
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ur-PK")
             putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, "ur-PK")
             putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
-            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 1500)
+            putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, 2000)
         }
         try {
             recognizer?.startListening(intent)
         } catch (e: Exception) {
-            onError("Listening start nahi ho saka: ${e.message}")
+            onError("Dobara try karein.")
+            createRecognizer()
         }
     }
 
