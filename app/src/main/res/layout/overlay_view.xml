@@ -3,80 +3,255 @@
     android:id="@+id/overlay_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/overlay_bg"
+    android:background="#E6000000"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="24dp">
+    android:padding="16dp">
 
-    <FrameLayout
-        android:id="@+id/orb_container"
-        android:layout_width="130dp"
-        android:layout_height="130dp"
-        android:layout_marginBottom="24dp">
-
-        <ImageView
-            android:id="@+id/orb_image"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:src="@drawable/orb_idle"
-            android:contentDescription="Orb" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="MIC"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            android:textStyle="bold" />
-    </FrameLayout>
-
-    <TextView
-        android:id="@+id/tv_status"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Sun raha hoon..."
-        android:textColor="@color/accent"
-        android:textSize="14sp"
-        android:letterSpacing="0.1"
-        android:layout_marginBottom="12dp" />
-
-    <TextView
-        android:id="@+id/tv_heard"
+    <!-- HEADER -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/card_bg"
-        android:padding="14dp"
-        android:textColor="@color/text_primary"
-        android:textSize="15sp"
-        android:hint="Aap kya bolenge..."
-        android:textColorHint="@color/text_hint"
-        android:gravity="center"
-        android:layout_marginBottom="12dp"
-        android:minHeight="50dp"
-        android:maxLines="3"
-        android:ellipsize="end" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
 
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="[ DUDE_ASSISTANT v1.0 ]"
+            android:textColor="#00FF41"
+            android:textSize="13sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/btn_close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="[ X ]"
+            android:textColor="#FF0000"
+            android:textSize="13sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:padding="8dp" />
+    </LinearLayout>
+
+    <!-- STATUS BAR -->
+    <TextView
+        android:id="@+id/tv_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="> READY... awaiting command_"
+        android:textColor="#00FF41"
+        android:textSize="12sp"
+        android:fontFamily="monospace"
+        android:background="#0D0D0D"
+        android:padding="8dp"
+        android:layout_marginBottom="10dp" />
+
+    <!-- RESPONSE BOX -->
     <TextView
         android:id="@+id/tv_response"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/card_bg"
-        android:padding="14dp"
-        android:textColor="@color/text_secondary"
-        android:textSize="13sp"
-        android:gravity="center"
-        android:minHeight="50dp"
-        android:maxLines="5"
+        android:minHeight="48dp"
+        android:maxLines="4"
+        android:text="> _"
+        android:textColor="#00FF41"
+        android:textSize="12sp"
+        android:fontFamily="monospace"
+        android:background="#0A0A0A"
+        android:padding="8dp"
         android:ellipsize="end"
-        android:visibility="gone" />
+        android:layout_marginBottom="12dp" />
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- QUICK BUTTONS ROW 1 -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Bye Dude bol kar band karein"
-        android:textColor="@color/text_hint"
-        android:textSize="11sp"
-        android:layout_marginTop="20dp" />
+        android:orientation="horizontal"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:id="@+id/btn_whatsapp"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="WHATSAPP"
+            android:textColor="#00FF41"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:background="#0D2B0D"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btn_youtube"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="YOUTUBE"
+            android:textColor="#00FF41"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:background="#0D2B0D"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btn_camera"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="CAMERA"
+            android:textColor="#00FF41"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:background="#0D2B0D" />
+    </LinearLayout>
+
+    <!-- QUICK BUTTONS ROW 2 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:id="@+id/btn_call"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="CALL"
+            android:textColor="#00FF41"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:background="#0D2B0D"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btn_screenshot"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="SCREENSHOT"
+            android:textColor="#00FF41"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:background="#0D2B0D"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btn_back"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="BACK"
+            android:textColor="#00FF41"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:background="#0D2B0D" />
+    </LinearLayout>
+
+    <!-- QUICK BUTTONS ROW 3 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:id="@+id/btn_vol_up"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="VOL+"
+            android:textColor="#00FF41"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:background="#0D2B0D"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btn_vol_down"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="VOL-"
+            android:textColor="#00FF41"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:background="#0D2B0D"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btn_torch"
+            android:layout_width="0dp"
+            android:layout_height="42dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="TORCH"
+            android:textColor="#00FF41"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:background="#0D2B0D" />
+    </LinearLayout>
+
+    <!-- TEXT INPUT BOX -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#0D0D0D"
+        android:padding="6dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="&gt; "
+            android:textColor="#00FF41"
+            android:textSize="14sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/et_command"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@null"
+            android:textColor="#00FF41"
+            android:textColorHint="#1A6B1A"
+            android:textSize="13sp"
+            android:fontFamily="monospace"
+            android:hint="command likho..."
+            android:inputType="text"
+            android:imeOptions="actionSend"
+            android:singleLine="true"
+            android:maxLines="1"
+            android:cursorVisible="true"
+            android:textCursorDrawable="@null" />
+
+        <TextView
+            android:id="@+id/btn_send"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:text="[RUN]"
+            android:textColor="#00FF41"
+            android:textSize="12sp"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:padding="8dp" />
+    </LinearLayout>
 
 </LinearLayout>
