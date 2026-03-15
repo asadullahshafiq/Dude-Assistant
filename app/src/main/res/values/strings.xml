@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">Dude Assistant</string>
+    <string name="accessibility_service_label">Dude Assistant – Screen Control</string>
+    <string name="accessibility_service_description">Dude ko screen control karne deta hai – WhatsApp messages, app open/close, aur button clicks ke liye</string>
+
+    <!-- Setup Screen -->
+    <string name="setup_title">Dude Assistant</string>
+    <string name="setup_subtitle">Aapka Personal AI Assistant</string>
+    <string name="step1_title">Step 1 – Microphone Permission</string>
+    <string name="step1_desc">Voice commands sunne ke liye zaruri hai</string>
+    <string name="step2_title">Step 2 – Overlay Permission</string>
+    <string name="step2_desc">Floating assistant dikhane ke liye zaruri hai</string>
+    <string name="step3_title">Step 3 – Accessibility Service</string>
+    <string name="step3_desc">Screen control ke liye enable karein</string>
+    <string name="step4_title">Step 4 – Default Assistant</string>
+    <string name="step4_desc">Settings > Apps > Default Apps > Digital Assistant > Dude Assistant</string>
+    <string name="contacts_title">Contacts Manage Karein</string>
+    <string name="contacts_hint">Naam likhein (e.g. mama)</string>
+    <string name="phone_hint">Phone number (+923001234567)</string>
+    <string name="add_contact">Contact Add Karein</string>
+    <string name="test_btn">Test Karein – Bolein!</string>
+    <string name="grant">Enable Karein</string>
+    <string name="done_badge">✓ Done</string>
+    <string name="version">Version 1.0 – Encrypted &amp; Safe</string>
+</resources>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary palette – soft dark blue/indigo -->
+    <color name="primary">#5C6BC0</color>
+    <color name="primary_dark">#3949AB</color>
+    <color name="primary_light">#7986CB</color>
+    <color name="accent">#00E5FF</color>
+    <color name="accent_pink">#F06292</color>
+
+    <!-- Background shades -->
+    <color name="bg_dark">#0D0D1A</color>
+    <color name="bg_card">#1A1A2E</color>
+    <color name="bg_card2">#16213E</color>
+    <color name="bg_surface">#0F3460</color>
+
+    <!-- Text -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B0BEC5</color>
+    <color name="text_hint">#546E7A</color>
+
+    <!-- Status -->
+    <color name="success">#00E676</color>
+    <color name="error">#FF5252</color>
+    <color name="warning">#FFD740</color>
+
+    <!-- Orb glow colors -->
+    <color name="orb_idle">#5C6BC0</color>
+    <color name="orb_listening">#00E5FF</color>
+    <color name="orb_thinking">#F06292</color>
+    <color name="orb_speaking">#00E676</color>
+
+    <!-- Semi-transparent overlay -->
+    <color name="overlay_bg">#CC0D0D1A</color>
+</resources>
