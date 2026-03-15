@@ -1,227 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/overlay_root"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#E6000000"
-    android:gravity="center"
+    android:layout_width="280dp"
+    android:layout_height="wrap_content"
+    android:background="#CC000000"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="8dp">
 
-    <!-- HEADER -->
+    <!-- Drag Handle + Status -->
     <LinearLayout
+        android:id="@+id/drag_handle"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="28dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="12dp">
+        android:layout_marginBottom="6dp">
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="[ DUDE_ASSISTANT v1.0 ]"
+            android:text="DUDE ▓▒░"
             android:textColor="#00FF41"
-            android:textSize="13sp"
+            android:textSize="11sp"
             android:fontFamily="monospace"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tv_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="ready_"
+            android:textColor="#00FF41"
+            android:textSize="10sp"
+            android:fontFamily="monospace"
+            android:gravity="center" />
 
         <TextView
             android:id="@+id/btn_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="[ X ]"
+            android:text="[X]"
             android:textColor="#FF0000"
-            android:textSize="13sp"
+            android:textSize="11sp"
             android:fontFamily="monospace"
-            android:textStyle="bold"
-            android:padding="8dp" />
+            android:padding="4dp" />
     </LinearLayout>
 
-    <!-- STATUS BAR -->
-    <TextView
-        android:id="@+id/tv_status"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="> READY... awaiting command_"
-        android:textColor="#00FF41"
-        android:textSize="12sp"
-        android:fontFamily="monospace"
-        android:background="#0D0D0D"
-        android:padding="8dp"
-        android:layout_marginBottom="10dp" />
-
-    <!-- RESPONSE BOX -->
+    <!-- Response -->
     <TextView
         android:id="@+id/tv_response"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:maxLines="4"
+        android:minHeight="30dp"
+        android:maxLines="3"
         android:text="> _"
         android:textColor="#00FF41"
-        android:textSize="12sp"
+        android:textSize="11sp"
         android:fontFamily="monospace"
         android:background="#0A0A0A"
-        android:padding="8dp"
-        android:ellipsize="end"
-        android:layout_marginBottom="12dp" />
+        android:padding="6dp"
+        android:layout_marginBottom="6dp" />
 
-    <!-- QUICK BUTTONS ROW 1 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="6dp">
-
-        <TextView
-            android:id="@+id/btn_whatsapp"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="WHATSAPP"
-            android:textColor="#00FF41"
-            android:textSize="10sp"
-            android:fontFamily="monospace"
-            android:background="#0D2B0D"
-            android:layout_marginEnd="4dp" />
-
-        <TextView
-            android:id="@+id/btn_youtube"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="YOUTUBE"
-            android:textColor="#00FF41"
-            android:textSize="10sp"
-            android:fontFamily="monospace"
-            android:background="#0D2B0D"
-            android:layout_marginEnd="4dp" />
-
-        <TextView
-            android:id="@+id/btn_camera"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="CAMERA"
-            android:textColor="#00FF41"
-            android:textSize="10sp"
-            android:fontFamily="monospace"
-            android:background="#0D2B0D" />
-    </LinearLayout>
-
-    <!-- QUICK BUTTONS ROW 2 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="6dp">
-
-        <TextView
-            android:id="@+id/btn_call"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="CALL"
-            android:textColor="#00FF41"
-            android:textSize="10sp"
-            android:fontFamily="monospace"
-            android:background="#0D2B0D"
-            android:layout_marginEnd="4dp" />
-
-        <TextView
-            android:id="@+id/btn_screenshot"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="SCREENSHOT"
-            android:textColor="#00FF41"
-            android:textSize="10sp"
-            android:fontFamily="monospace"
-            android:background="#0D2B0D"
-            android:layout_marginEnd="4dp" />
-
-        <TextView
-            android:id="@+id/btn_back"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="BACK"
-            android:textColor="#00FF41"
-            android:textSize="10sp"
-            android:fontFamily="monospace"
-            android:background="#0D2B0D" />
-    </LinearLayout>
-
-    <!-- QUICK BUTTONS ROW 3 -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="12dp">
-
-        <TextView
-            android:id="@+id/btn_vol_up"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="VOL+"
-            android:textColor="#00FF41"
-            android:textSize="10sp"
-            android:fontFamily="monospace"
-            android:background="#0D2B0D"
-            android:layout_marginEnd="4dp" />
-
-        <TextView
-            android:id="@+id/btn_vol_down"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="VOL-"
-            android:textColor="#00FF41"
-            android:textSize="10sp"
-            android:fontFamily="monospace"
-            android:background="#0D2B0D"
-            android:layout_marginEnd="4dp" />
-
-        <TextView
-            android:id="@+id/btn_torch"
-            android:layout_width="0dp"
-            android:layout_height="42dp"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="TORCH"
-            android:textColor="#00FF41"
-            android:textSize="10sp"
-            android:fontFamily="monospace"
-            android:background="#0D2B0D" />
-    </LinearLayout>
-
-    <!-- TEXT INPUT BOX -->
+    <!-- Input Row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="#0D0D0D"
-        android:padding="6dp">
+        android:padding="4dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:text="&gt; "
+            android:text="&gt;"
             android:textColor="#00FF41"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:fontFamily="monospace"
-            android:textStyle="bold" />
+            android:paddingEnd="4dp" />
 
         <EditText
             android:id="@+id/et_command"
@@ -231,27 +89,24 @@
             android:background="@null"
             android:textColor="#00FF41"
             android:textColorHint="#1A6B1A"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:fontFamily="monospace"
-            android:hint="command likho..."
+            android:hint="command..."
             android:inputType="text"
             android:imeOptions="actionSend"
             android:singleLine="true"
-            android:maxLines="1"
-            android:cursorVisible="true"
-            android:textCursorDrawable="@null" />
+            android:maxLines="1" />
 
         <TextView
             android:id="@+id/btn_send"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_vertical"
-            android:text="[RUN]"
+            android:text="[GO]"
             android:textColor="#00FF41"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:fontFamily="monospace"
-            android:textStyle="bold"
-            android:padding="8dp" />
+            android:padding="6dp" />
     </LinearLayout>
 
 </LinearLayout>
