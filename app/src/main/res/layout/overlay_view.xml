@@ -8,7 +8,6 @@
     android:orientation="vertical"
     android:padding="24dp">
 
-    <!-- Orb container -->
     <FrameLayout
         android:id="@+id/orb_container"
         android:layout_width="130dp"
@@ -20,18 +19,18 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:src="@drawable/orb_idle"
-            android:contentDescription="Assistant Orb" />
+            android:contentDescription="Orb" />
 
-        <!-- Mic icon inside orb -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="🎤"
-            android:textSize="32sp" />
+            android:text="MIC"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
     </FrameLayout>
 
-    <!-- Status label -->
     <TextView
         android:id="@+id/tv_status"
         android:layout_width="wrap_content"
@@ -42,7 +41,6 @@
         android:letterSpacing="0.1"
         android:layout_marginBottom="12dp" />
 
-    <!-- What user said -->
     <TextView
         android:id="@+id/tv_heard"
         android:layout_width="match_parent"
@@ -59,7 +57,6 @@
         android:maxLines="3"
         android:ellipsize="end" />
 
-    <!-- Response text -->
     <TextView
         android:id="@+id/tv_response"
         android:layout_width="match_parent"
@@ -74,11 +71,10 @@
         android:ellipsize="end"
         android:visibility="gone" />
 
-    <!-- Close hint -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="\"Bye Dude\" bol kar band karein"
+        android:text="Bye Dude bol kar band karein"
         android:textColor="@color/text_hint"
         android:textSize="11sp"
         android:layout_marginTop="20dp" />
