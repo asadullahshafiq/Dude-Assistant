@@ -6,7 +6,6 @@ import android.media.AudioManager
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
-import android.provider.MediaStore
 import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -21,7 +20,6 @@ class ActionExecutor(
     private val scope = CoroutineScope(Dispatchers.Main)
 
     fun execute(cmd: CommandParser.ParsedCommand) {
-        Log.d("ActionExecutor", "Executing: ${cmd.action} params=${cmd.params}")
         when (cmd.action) {
             CommandParser.ActionType.FAREWELL -> handleFarewell()
             CommandParser.ActionType.GREETING -> handleGreeting()
@@ -46,66 +44,45 @@ class ActionExecutor(
             CommandParser.ActionType.BLUETOOTH_TOGGLE -> handleBluetooth()
             CommandParser.ActionType.FLASHLIGHT_TOGGLE -> handleFlashlight()
             CommandParser.ActionType.ANSWER_QUESTION -> handleQuestion(cmd.params["q"] ?: cmd.rawText)
-            else -> {
-                tts.speak("Mujhe samajh nahi aaya. Dobara bolein.")
-            }
+            else -> tts.speak("Samajh nahi aaya. Dobara likho.")
         }
     }
 
     private fun handleFarewell() {
-        tts.speak("Theek hai! Phir milenge. Bye Dude!")
-        Handler(Looper.getMainLooper()).postDelayed({ onDismiss() }, 2000)
+        tts.speak("Bye! Phir milenge.")
+        Handler(Looper.getMainLooper()).postDelayed({ onDismiss() }, 1500)
     }
 
     private fun handleGreeting() {
-        val greetings = listOf(
-            "Salam! Kya hukum hai?",
-            "Hello! Batao kya karna hai?",
-            "Ji haan! Kaise madad karun?"
-        )
-        tts.speak(greetings.random())
+        tts.speak("Salam! Kya karna hai?")
     }
 
     private fun handleWhatsApp(params: Map<String, String>) {
         val contactName = params["contact"] ?: "mama"
         val message = params["message"] ?: "Kya hal hai?"
-
         val phone = encryptionManager.getContact(contactName)
         if (phone == null) {
-            tts.speak("$contactName ka number nahi mila. Pehle contact add karein.")
+            tts.speak("$contactName ka number nahi mila. App mein add karein.")
             return
         }
-
-        tts.speak("$contactName ko WhatsApp message bhej raha hun...")
-
-        val acc = AssistantAccessibilityService.instance
-        if (acc != null) {
-            acc.sendWhatsAppMessage(phone, message) { success ->
-                if (success) {
-                    tts.speak("Message bhej diya!")
-                } else {
-                    tts.speak("Message bhej diya! Send button dhundh raha hun...")
-                }
+        tts.speak("$contactName ko message bhej raha hun...")
+        try {
+            val cleanPhone = phone.replace(Regex("[^\\d+]"), "")
+            val encoded = java.net.URLEncoder.encode(message, "UTF-8")
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                data = Uri.parse("https://wa.me/$cleanPhone?text=$encoded")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-        } else {
-            // Fallback: open WhatsApp chat directly
-            try {
-                val cleanPhone = phone.replace(Regex("[^\\d+]"), "")
-                val encoded = java.net.URLEncoder.encode(message, "UTF-8")
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    data = Uri.parse("https://wa.me/$cleanPhone?text=$encoded")
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                }
-                context.startActivity(intent)
-                tts.speak("WhatsApp khul gaya. Send button dabayein.")
-            } catch (e: Exception) {
-                tts.speak("WhatsApp install nahi hai ya koi error aaya.")
-            }
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            tts.speak("WhatsApp nahi khula.")
         }
     }
 
     private fun handleOpenApp(appName: String) {
         tts.speak("$appName khol raha hun...")
+        val app = appName.lowercase().trim()
+
         val packageMap = mapOf(
             "youtube" to "com.google.android.youtube",
             "whatsapp" to "com.whatsapp",
@@ -124,33 +101,39 @@ class ActionExecutor(
             "clock" to "com.sec.android.app.clockpackage",
             "calendar" to "com.samsung.android.calendar",
             "play store" to "com.android.vending",
-            "files" to "com.sec.android.app.myfiles"
+            "files" to "com.sec.android.app.myfiles",
+            "phone" to "com.samsung.android.dialer",
+            "messages" to "com.samsung.android.messaging",
+            "contacts" to "com.samsung.android.contacts",
+            "browser" to "com.android.browser"
         )
 
-        val pkg = packageMap[appName.lowercase()]
-        if (pkg != null) {
-            val intent = context.packageManager.getLaunchIntentForPackage(pkg)
-            if (intent != null) {
-                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                context.startActivity(intent)
-            } else {
-                // Try generic search
-                openAppGeneric(appName)
-            }
-        } else {
-            openAppGeneric(appName)
-        }
-    }
-
-    private fun openAppGeneric(appName: String) {
+        val pkg = packageMap[app]
         val pm = context.packageManager
-        val apps = pm.getInstalledApplications(0)
-        for (app in apps) {
-            val label = pm.getApplicationLabel(app).toString().lowercase()
-            if (label.contains(appName.lowercase())) {
-                val intent = pm.getLaunchIntentForPackage(app.packageName)
+
+        if (pkg != null) {
+            val intent = pm.getLaunchIntentForPackage(pkg)
+            if (intent != null) {
+                intent.addFlags(
+                    Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+                )
+                context.startActivity(intent)
+                return
+            }
+        }
+
+        // Package na mile to naam se dhundo
+        val installedApps = pm.getInstalledApplications(0)
+        for (info in installedApps) {
+            val label = pm.getApplicationLabel(info).toString().lowercase()
+            if (label.contains(app)) {
+                val intent = pm.getLaunchIntentForPackage(info.packageName)
                 if (intent != null) {
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    intent.addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                        Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+                    )
                     context.startActivity(intent)
                     return
                 }
@@ -160,31 +143,25 @@ class ActionExecutor(
     }
 
     private fun handleCloseApp() {
-        tts.speak("App band kar raha hun...")
         AssistantAccessibilityService.instance?.pressRecents()
         Handler(Looper.getMainLooper()).postDelayed({
             AssistantAccessibilityService.instance?.clickNodeWithText("close")
-                ?: AssistantAccessibilityService.instance?.pressBack()
-        }, 500)
+        }, 600)
     }
 
     private fun handleBack() {
-        tts.speak("Peeche ja raha hun.")
         AssistantAccessibilityService.instance?.pressBack()
     }
 
     private fun handleHome() {
-        tts.speak("Home screen par ja raha hun.")
         AssistantAccessibilityService.instance?.pressHome()
     }
 
     private fun handleRecents() {
-        tts.speak("Recent apps...")
         AssistantAccessibilityService.instance?.pressRecents()
     }
 
     private fun handleScreenshot() {
-        tts.speak("Screenshot le raha hun...")
         AssistantAccessibilityService.instance?.takeScreenshot()
     }
 
@@ -197,7 +174,7 @@ class ActionExecutor(
         tts.speak("$contactName ko call kar raha hun...")
         val intent = Intent(Intent.ACTION_CALL).apply {
             data = Uri.parse("tel:$phone")
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
     }
@@ -214,12 +191,11 @@ class ActionExecutor(
         val am = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val dir = if (increase) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER
         am.adjustStreamVolume(AudioManager.STREAM_MUSIC, dir, AudioManager.FLAG_SHOW_UI)
-        tts.speak(if (increase) "Volume badha diya." else "Volume kam kar diya.")
     }
 
     private fun handleSearch(query: String) {
         if (NetworkHelper.isOnline(context)) {
-            tts.speak("Search kar raha hun: $query")
+            tts.speak("Search kar raha hun...")
             scope.launch {
                 val answer = NetworkHelper.askDuckDuckGo(query)
                 Handler(Looper.getMainLooper()).post {
@@ -227,64 +203,44 @@ class ActionExecutor(
                 }
             }
         } else {
-            val answer = NetworkHelper.offlineAnswer(query)
-            tts.speak(answer)
+            val ans = NetworkHelper.offlineAnswer(query)
+            tts.speak(ans)
         }
     }
 
     private fun handleClickText(text: String) {
-        tts.speak("$text button dhoondh raha hun...")
         val success = AssistantAccessibilityService.instance?.clickNodeWithText(text) ?: false
-        if (!success) {
-            tts.speak("$text nahi mila screen par.")
-        } else {
-            tts.speak("Click kar diya!")
-        }
+        if (!success) tts.speak("$text nahi mila.")
     }
 
     private fun handleClickColor(color: String) {
-        tts.speak("$color button dhoondh raha hun...")
         AssistantAccessibilityService.instance?.clickButtonByColor(color)
     }
 
     private fun handleScroll(up: Boolean) {
-        if (up) {
-            AssistantAccessibilityService.instance?.scrollUp()
-            tts.speak("Upar scroll kar diya.")
-        } else {
-            AssistantAccessibilityService.instance?.scrollDown()
-            tts.speak("Neeche scroll kar diya.")
-        }
+        if (up) AssistantAccessibilityService.instance?.scrollUp()
+        else AssistantAccessibilityService.instance?.scrollDown()
     }
 
     private fun handleNotificationPanel() {
         AssistantAccessibilityService.instance?.pullNotificationBar()
-        tts.speak("Notifications khol diye.")
     }
 
     private fun handleWifi() {
-        tts.speak("WiFi settings khol raha hun.")
         val intent = Intent(android.provider.Settings.ACTION_WIFI_SETTINGS).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
     }
 
     private fun handleBluetooth() {
-        tts.speak("Bluetooth settings khol raha hun.")
         val intent = Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
     }
 
     private fun handleFlashlight() {
-        tts.speak("Torch toggle kar raha hun.")
-        val intent = Intent(Intent.ACTION_MAIN).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            putExtra("flash", true)
-        }
-        // Many Samsung devices support this via Quick Settings toggle
         AssistantAccessibilityService.instance?.pullNotificationBar()
         Handler(Looper.getMainLooper()).postDelayed({
             AssistantAccessibilityService.instance?.clickNodeWithText("flashlight")
@@ -298,12 +254,14 @@ class ActionExecutor(
             scope.launch {
                 val answer = NetworkHelper.askDuckDuckGo(question)
                 Handler(Looper.getMainLooper()).post {
-                    tts.speak(if (answer.length > 10) answer.take(300) else "Mujhe is ka jawab nahi mila. Google par search karna chahein?")
+                    tts.speak(
+                        if (answer.length > 10) answer.take(300)
+                        else "Jawab nahi mila."
+                    )
                 }
             }
         } else {
-            val ans = NetworkHelper.offlineAnswer(question)
-            tts.speak(ans)
+            tts.speak(NetworkHelper.offlineAnswer(question))
         }
     }
 }
