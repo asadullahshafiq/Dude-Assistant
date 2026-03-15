@@ -8,8 +8,12 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
+import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.EditorInfo
@@ -25,6 +29,7 @@ class OverlayService : Service() {
     private lateinit var tts: TTSManager
     private lateinit var encryptionManager: EncryptionManager
     private lateinit var actionExecutor: ActionExecutor
+    private lateinit var params: WindowManager.LayoutParams
 
     private lateinit var tvStatus: TextView
     private lateinit var tvResponse: TextView
@@ -64,7 +69,6 @@ class OverlayService : Service() {
         )
 
         setupOverlay()
-        tts.speak("Dude ready hai. Command dein.")
     }
 
     private fun setupOverlay() {
@@ -80,145 +84,121 @@ class OverlayService : Service() {
         else
             WindowManager.LayoutParams.TYPE_PHONE
 
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT,
+        params = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
             type,
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
             PixelFormat.TRANSLUCENT
-        )
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+            x = 20
+            y = 200
+        }
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         windowManager.addView(overlayView, params)
 
-        setupButtons()
-        setupTextInput()
+        setupDrag()
+        setupInput()
+
+        // Close button
+        overlayView.findViewById<TextView>(R.id.btn_close).setOnClickListener {
+            stopSelf()
+        }
     }
 
-    private fun setupButtons() {
-        // Close
-        overlayView.findViewById<TextView>(R.id.btn_close).setOnClickListener {
-            tts.speak("Bye Dude!")
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                stopSelf()
-            }, 1500)
-        }
+    // ── Drag Support ──────────────────────────────────────────
+    private fun setupDrag() {
+        val dragHandle = overlayView.findViewById<View>(R.id.drag_handle)
+        var startX = 0f; var startY = 0f
+        var startParamX = 0; var startParamY = 0
+        var isDragging = false
 
-        // WhatsApp
-        overlayView.findViewById<TextView>(R.id.btn_whatsapp).setOnClickListener {
-            showPrompt("mama ko WhatsApp message karo ke kya hal hai")
+        dragHandle.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    startX = event.rawX
+                    startY = event.rawY
+                    startParamX = params.x
+                    startParamY = params.y
+                    isDragging = false
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    val dx = event.rawX - startX
+                    val dy = event.rawY - startY
+                    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                        isDragging = true
+                        params.x = (startParamX + dx).toInt()
+                        params.y = (startParamY + dy).toInt()
+                        windowManager.updateViewLayout(overlayView, params)
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> isDragging
+                else -> false
+            }
         }
+    }
 
-        // YouTube
-        overlayView.findViewById<TextView>(R.id.btn_youtube).setOnClickListener {
-            executeCommand("youtube kholo")
-        }
-
-        // Camera
-        overlayView.findViewById<TextView>(R.id.btn_camera).setOnClickListener {
-            executeCommand("camera kholo")
-        }
-
-        // Call
-        overlayView.findViewById<TextView>(R.id.btn_call).setOnClickListener {
-            showPrompt("mama ko call karo")
-        }
-
-        // Screenshot
-        overlayView.findViewById<TextView>(R.id.btn_screenshot).setOnClickListener {
-            executeCommand("screenshot lo")
-        }
-
-        // Back
-        overlayView.findViewById<TextView>(R.id.btn_back).setOnClickListener {
-            executeCommand("wapas jao")
-        }
-
-        // Volume Up
-        overlayView.findViewById<TextView>(R.id.btn_vol_up).setOnClickListener {
-            executeCommand("volume badhao")
-        }
-
-        // Volume Down
-        overlayView.findViewById<TextView>(R.id.btn_vol_down).setOnClickListener {
-            executeCommand("volume kam karo")
-        }
-
-        // Torch
-        overlayView.findViewById<TextView>(R.id.btn_torch).setOnClickListener {
-            executeCommand("torch on karo")
-        }
-
-        // Send button
+    // ── Text Input ────────────────────────────────────────────
+    private fun setupInput() {
         overlayView.findViewById<TextView>(R.id.btn_send).setOnClickListener {
             runCommand()
         }
-    }
 
-    private fun setupTextInput() {
-        // Enter key se bhi run ho
         etCommand.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEND ||
                 actionId == EditorInfo.IME_ACTION_DONE) {
-                runCommand()
-                true
+                runCommand(); true
             } else false
         }
-    }
-
-    private fun showPrompt(text: String) {
-        etCommand.setText(text)
-        etCommand.setSelection(text.length)
-        etCommand.requestFocus()
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.showSoftInput(etCommand, InputMethodManager.SHOW_IMPLICIT)
     }
 
     private fun runCommand() {
         val text = etCommand.text.toString().trim()
         if (text.isEmpty()) return
 
-        // Keyboard band karo
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(etCommand.windowToken, 0)
-
         etCommand.text.clear()
+
         executeCommand(text)
     }
 
     private fun executeCommand(text: String) {
-        updateStatus("> $text")
-        updateResponse("> processing...")
+        updateStatus("running_")
+        updateResponse("> $text")
 
         val cmd = CommandParser.parse(text, encryptionManager)
         actionExecutor.execute(cmd)
 
-        // Response update
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            updateStatus("> READY... awaiting command_")
+        Handler(Looper.getMainLooper()).postDelayed({
+            updateStatus("ready_")
         }, 3000)
     }
 
-    private fun updateStatus(msg: String) {
-        android.os.Handler(android.os.Looper.getMainLooper()).post {
-            tvStatus.text = msg
-        }
-    }
-
-    private fun updateResponse(msg: String) {
-        android.os.Handler(android.os.Looper.getMainLooper()).post {
+    fun updateResponse(msg: String) {
+        Handler(Looper.getMainLooper()).post {
             tvResponse.text = msg
         }
     }
 
+    private fun updateStatus(msg: String) {
+        Handler(Looper.getMainLooper()).post {
+            tvStatus.text = msg
+        }
+    }
+
+    // ── App Open Fix ──────────────────────────────────────────
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID, "Dude Assistant",
                 NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                setShowBadge(false)
-            }
+            ).apply { setShowBadge(false) }
             getSystemService(NotificationManager::class.java)
                 .createNotificationChannel(channel)
         }
@@ -226,8 +206,8 @@ class OverlayService : Service() {
 
     private fun buildNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Dude Assistant")
-            .setContentText("Active hai — X dabao band karne ke liye")
+            .setContentTitle("Dude Assistant Active")
+            .setContentText("X dabao band karne ke liye")
             .setSmallIcon(android.R.drawable.ic_menu_send)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
